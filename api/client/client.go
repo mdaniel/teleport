@@ -799,7 +799,57 @@ func (c *Client) GetKubeServices(ctx context.Context) ([]types.Server, error) {
 	return servers, nil
 }
 
+// GetApplicationServers returns all registered application servers.
+func (c *Client) GetApplicationServers(ctx context.Context, namespace string) ([]types.AppServer, error) {
+	resp, err := c.grpc.GetApplicationServers(ctx, &proto.GetApplicationServersRequest{
+		Namespace: namespace,
+	}, c.callOpts...)
+	if err != nil {
+		return nil, trail.FromGRPC(err)
+	}
+	var servers []types.AppServer
+	for _, server := range resp.GetServers() {
+		servers = append(servers, server)
+	}
+	return servers, nil
+}
+
+// UpsertApplicationServer registers an application server.
+func (c *Client) UpsertApplicationServer(ctx context.Context, server types.AppServer) (*types.KeepAlive, error) {
+	s, ok := server.(*types.AppServerV3)
+	if !ok {
+		return nil, trace.BadParameter("invalid type %T", server)
+	}
+	keepAlive, err := c.grpc.UpsertApplicationServer(ctx, &proto.UpsertApplicationServerRequest{
+		Server: s,
+	}, c.callOpts...)
+	if err != nil {
+		return nil, trail.FromGRPC(err)
+	}
+	return keepAlive, nil
+}
+
+// DeleteApplicationServer removes specified application server.
+func (c *Client) DeleteApplicationServer(ctx context.Context, namespace, hostID, name string) error {
+	_, err := c.grpc.DeleteApplicationServer(ctx, &proto.DeleteApplicationServerRequest{
+		Namespace: namespace,
+		HostID:    hostID,
+		Name:      name,
+	}, c.callOpts...)
+	return trail.FromGRPC(err)
+}
+
+// DeleteAllApplicationServers removes all registered application servers.
+func (c *Client) DeleteAllApplicationServers(ctx context.Context, namespace string) error {
+	_, err := c.grpc.DeleteAllApplicationServers(ctx, &proto.DeleteAllApplicationServersRequest{
+		Namespace: namespace,
+	}, c.callOpts...)
+	return trail.FromGRPC(err)
+}
+
 // GetAppServers gets all application servers.
+//
+// DELETE IN 9.0. Deprecated, use GetApplicationServers.
 func (c *Client) GetAppServers(ctx context.Context, namespace string) ([]types.Server, error) {
 	resp, err := c.grpc.GetAppServers(ctx, &proto.GetAppServersRequest{
 		Namespace: namespace,
@@ -817,6 +867,8 @@ func (c *Client) GetAppServers(ctx context.Context, namespace string) ([]types.S
 }
 
 // UpsertAppServer adds an application server.
+//
+// DELETE IN 9.0. Deprecated, use UpsertApplicationServer.
 func (c *Client) UpsertAppServer(ctx context.Context, server types.Server) (*types.KeepAlive, error) {
 	s, ok := server.(*types.ServerV2)
 	if !ok {
@@ -833,6 +885,8 @@ func (c *Client) UpsertAppServer(ctx context.Context, server types.Server) (*typ
 }
 
 // DeleteAppServer removes an application server.
+//
+// DELETE IN 9.0. Deprecated, use DeleteApplicationServer.
 func (c *Client) DeleteAppServer(ctx context.Context, namespace string, name string) error {
 	_, err := c.grpc.DeleteAppServer(ctx, &proto.DeleteAppServerRequest{
 		Namespace: namespace,
@@ -842,6 +896,8 @@ func (c *Client) DeleteAppServer(ctx context.Context, namespace string, name str
 }
 
 // DeleteAllAppServers removes all application servers.
+//
+// DELETE IN 9.0. Deprecated, use DeleteAllApplicationServers.
 func (c *Client) DeleteAllAppServers(ctx context.Context, namespace string) error {
 	_, err := c.grpc.DeleteAllAppServers(ctx, &proto.DeleteAllAppServersRequest{
 		Namespace: namespace,
