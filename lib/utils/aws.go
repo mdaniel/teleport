@@ -34,11 +34,11 @@ func FilterAWSRoles(arns []string, accountID string) (result []AWSRole) {
 		}
 		// Example ARN: arn:aws:iam::1234567890:role/EC2FullAccess.
 		parts := strings.Split(parsed.Resource, "/")
-		if len(parts) != 2 || parts[0] != "role" {
+		if parts[0] != "role" {
 			continue
 		}
 		result = append(result, AWSRole{
-			Display: parts[1],
+			Display: parts[len(parts)-1],
 			ARN:     roleARN,
 		})
 	}
